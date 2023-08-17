@@ -17,3 +17,4 @@ dependencies:
         - r-pwr
         - r-here
         - r-dt
+        r-devtools
