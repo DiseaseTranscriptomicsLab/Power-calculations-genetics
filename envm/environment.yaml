@@ -13,7 +13,7 @@ channels:
 
 #install following packages in the conda environment
 dependencies:
-        r-optparse
+        - r-optparse
         - r-pwr
         - r-here
         - r-dt
