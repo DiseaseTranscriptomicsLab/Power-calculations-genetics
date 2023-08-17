@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+### Clone the repo
+git clone https://github.com/DiseaseTranscriptomicsLab/Power_calc_genetics
+
+### Install conda
+unset PYTHONPATH
+unset CONDA_PREFIX
+wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+bash miniconda.sh -b -p ./miniconda && rm miniconda.sh
+export PATH=$(pwd)/miniconda/bin:$PATH
+conda update conda
+
+### Install environments
+ENV_NAME=power_calc_genetics
+conda env create -p $(pwd)/miniconda/envs/${ENV_NAME} --file envm/environment.yaml
+export PATH=$(pwd)/miniconda/envs/${ENV_NAME}/bin:$PATH
+
+### Create the loader script
+ENV_NAME=power_calc_genetics
+cat <<EOT > load_power_calc_genetics.sh
+unset PYTHONPATH
+unset PERL5LIB
+export PATH=$(pwd)/miniconda/envs/${ENV_NAME}/bin:$(pwd)/miniconda/bin:\$PATH
+export CONDA_PREFIX=$(pwd)/miniconda/envs/${ENV_NAME}
+EOT
