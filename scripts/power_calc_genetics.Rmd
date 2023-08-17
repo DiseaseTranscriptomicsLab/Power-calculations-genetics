@@ -1,0 +1,572 @@
+---
+title: "Genetic power calculations"
+author: 'Jacek Marzec'
+date: '`r Sys.Date()`'
+output: 
+  html_document:
+    keep_md: yes
+    code_download: true
+    code_folding: hide
+    theme: readable
+    css: power_calc_genetics.css
+    toc: true
+    toc_float: true
+  rmdformats::material:
+    highlight: kate
+params:
+  samples_n: 35
+  features_n: 100
+  power: 0.9
+  sig_level: 0.05
+  deg_freedom: 1
+  report_name:
+  report_dir:
+  seed: 99999999
+  hide_code_btn: FALSE
+---
+
+```{r code_setup, echo = FALSE}
+##### Include or exclude the "Code" button allowing to "show"/"hide" code chunks from the report 
+if ( params$hide_code_btn ) {
+  writeLines(".btn { display: none ;", con = "power_calc_genetics.css")
+} else {
+  writeLines(" ", con = "power_calc_genetics.css")
+}
+
+##### Set the seed
+if ( params$seed == 99999999 ) {
+  seed <- sample(0:99999999, 1, replace = TRUE)
+} else {
+  seed <- params$seed
+}
+
+set.seed(seed)
+
+##### initiate chunks timing
+NOW <- Sys.time()
+
+##### Time chunks during knitting
+knitr::knit_hooks$set(timeit = function(before) {
+  
+  if (before) {
+    print(paste("Start:", Sys.time()))
+    NOW <<- Sys.time()
+  } else {
+    print(paste("Stop:", Sys.time()))
+    print(Sys.time() - NOW)
+  }
+})
+
+knitr::opts_chunk$set(timeit = TRUE)
+
+##### Define functions
+##### Function to generate a full-resolution pdf image before generating a small image in the chunk (from https://stackoverflow.com/questions/37834053/what-is-a-simple-way-to-thumbnail-some-plots-in-r-markdown-knitr )
+allow_thumbnails <- function(x, options) {
+  if (!is.null(options$thumb)) {
+    filename <- sprintf("%s.full.pdf", strsplit(basename(x), "\\.")[[1]][1])
+    absolute_path <- file.path(dirname(x), filename)
+    ##### Generate the full resolution pdf
+    pdf(absolute_path, width = options$thumb$width, height = options$thumb$height)
+      eval(parse(text = options$code))
+    dev.off()
+    ##### Add an html link to the low resolution png
+    options$fig.link = absolute_path
+  }
+  knitr:::hook_plot_md_base(x, options)
+}
+
+##### Function to calculate the corrected p-value using the Šidák correction
+sidak_correction <- function(p_value, n_tests) {
+  return( 1-(1-p_value)^(1/n_tests) )
+}
+
+##### Function to convert Cohen's d to log odds ratio ( log(OR) )
+cohens_d_2_logOR <- function(cohens_d) {
+    return( cohens_d * pi / sqrt(3) )
+}
+
+##### Generate a full-resolution pdf image before generating a small image in the chunk
+knitr::knit_hooks$set(plot = allow_thumbnails)
+```
+
+```{r load_libraries, echo = FALSE, warning=FALSE, message=FALSE}
+suppressMessages(library(pwr))
+suppressMessages(library(here))
+suppressMessages(library(DT))
+```
+
+***
+
+Report summarising power calculations (based on ***[chi-squared](https://en.wikipedia.org/wiki/Chi-squared_test){target="_blank"}*** test) for genetic studies using *[pwr](https://cran.r-project.org/web/packages/pwr/){target="_blank"}* R package (see vignette [here](https://cran.r-project.org/web/packages/pwr/vignettes/pwr-vignette.html){target="_blank"}).
+
+***
+
+<details>
+<summary>Input parameters</summary>
+<font size="2">
+
+* **samples_n**: `r params$samples_n`
+* **features_n**: `r params$features_n`
+* **power**: `r params$power`
+* **sig_level**: `r params$sig_level`
+* **deg_freedom**: `r params$deg_freedom`
+* **report_name**: `r params$report_name`
+* **report_dir**: `r params$report_dir`
+* **seed**: `r seed`
+* **hide_code_btn**: `r params$hide_code_btn`
+
+</font> 
+</details>
+
+***
+
+<details>
+<summary>Introduction</summary>
+
+<br>
+
+Prior to designing any genetic study it is important to evaluate the relationship between **effect size** and variants **allele frequency** as these impact the statistical power for detecting genuine associations between variants and investigated trait or disease.
+
+It is generally observed that **common variants tend to have smaller effect sizes**, while **rare variants tend to have larger effect sizes**. This relationship is often referred to as the "common disease, common variant" (CDCV) hypothesis and the "common disease, rare variant" (CDRV) hypothesis.
+
+The **CDCV hypothesis** suggests that common diseases are often associated with variants present in more than 1-5% of the population. These common variants typically have small effect sizes, meaning they only slightly increase the risk of disease.
+
+The **CDRV hypothesis** suggests that common diseases can also be associated with rare variants (those present in less than 1% of the population). These rare variants often have larger effect sizes, meaning they significantly increase the risk of disease. However, because they are rare, they may only contribute to a small fraction of the overall disease risk at the population level.
+
+In the context of study design, the relationship between effect size and allele frequency impacts the statistical power of the study. Detecting common variants with small effect sizes requires large sample sizes to achieve sufficient power, while studies of rare variants may require fewer samples but rely on the assumption of a larger effect size.
+
+It's important to remember that this is a general trend, and not a hard-and-fast rule. There can be common variants with large effects (though these are usually quickly acted upon by natural selection), and rare variants with small effects. The relationship between allele frequency and effect size is influenced by a complex interplay of factors including natural selection, mutation rate, genetic drift, and population history.
+
+<br>
+
+```{r effect_size_vs_AF, out.width = "500px", echo = FALSE, warning=FALSE, message=FALSE}
+
+knitr::include_graphics( paste(here(), "img/effect_size_vs_AF.png", sep = "/") )
+```
+
+<br>
+
+**Examples**
+
+Below are example plots illustrating allele frequency (*x-axis*) and effect sizes (odds ratio (OR), *y-axis*) for genetic variants associated with breast, colorectal, prostate and lung cancers from a paper "[Genetic architecture of cancer and other complex diseases: lessons learned and future directions](https://pubmed.ncbi.nlm.nih.gov/21459759/){target="_blank"}". Associations identified through genome-wide association studies (GWAS) or GWAS follow-up studies are shown with solid colored bars; all others are shaded from dark (*top*) to light (*bottom*). 
+
+<br>
+
+<details>
+<summary>Breast cancer</summary>
+
+<br>
+
+```{r effect_size_vs_AF_BRCA, out.width = "800px", echo = FALSE, warning=FALSE, message=FALSE}
+
+knitr::include_graphics( paste(here(), "img/effect_size_vs_AF_BRCA.jpeg", sep = "/") )
+```
+
+</details>
+
+<br>
+
+<details>
+<summary>Colorectal cancer</summary>
+
+<br>
+
+```{r effect_size_vs_AF_CRC, out.width = "800px", echo = FALSE, warning=FALSE, message=FALSE}
+
+knitr::include_graphics( paste(here(), "img/effect_size_vs_AF_CRC.jpeg", sep = "/") )
+```
+
+</details>
+
+<br>
+
+<details>
+<summary>Prostate cancer</summary>
+
+<br>
+
+```{r effect_size_vs_AF_PCA, out.width = "800px", echo = FALSE, warning=FALSE, message=FALSE}
+
+knitr::include_graphics( paste(here(), "img/effect_size_vs_AF_PCA.jpeg", sep = "/") )
+```
+
+</details>
+
+<br>
+
+<details>
+<summary>Lung cancer</summary>
+
+<br>
+
+```{r effect_size_vs_AF_LUNG, out.width = "800px", echo = FALSE, warning=FALSE, message=FALSE}
+
+knitr::include_graphics( paste(here(), "img/effect_size_vs_AF_LUNG.jpeg", sep = "/") )
+```
+
+</details>
+
+<br>
+
+</details>
+
+***
+
+<details>
+<summary>Definitions</summary>
+
+<br>
+
+**Effect size**
+
+Effect size quantifies the strength of the association between a genetic variant (e.g. SNP) and a particular trait or disease. It reflects the magnitude of the effect that the variant has on the risk of developing the trait or disease.
+
+As default, the effect size throughout this report refers to a **standardized effect size** called *[Cohen's d](https://statisticsbyjim.com/basics/cohens-d/){target="_blank"}*. By convention, Cohen's d of 0.2, 0.5, 0.8 are considered small, medium and large effect sizes respectively. Cohen's d can be converted to other effect size measures using the following online calculator: [https://www.escal.site](https://www.escal.site){target="_blank"}.
+
+***
+
+**Allele frequency**
+
+Allele frequency represents the frequency of a specific allele (e.g., A, C, T, G) at a given SNP locus in the population. Allele frequencies can vary widely, ranging from very rare variants (low frequency) to very common variants (high frequency).
+
+***
+
+**Power**
+
+Statistical power represents the probability of correctly detecting a true association between a genetic variant and a phenotype (e.g., disease predisposition) when it exists. In many fields of research, a power of 0.80 (or 80%) is often considered a standard minimum. This means that if there truly is an effect (such as a difference between groups), one would expect to detect it 80% of the time. A power of 80% means that there is an 80% chance of correctly identifying a true predisposition locus if it is present in the population. In other words, the study has an 80% chance of avoiding a Type II error (false negative, with 20% of chance in that case), which occurs when a true association is missed due to insufficient statistical power. Achieving higher power (e.g., **90%** or **95%**) is desirable when possible, as it further reduces the risk of false negatives. In genomics, especially for predisposition loci, it's often the case that effects are quite small, and so very large sample sizes might be required to achieve reasonable power.
+
+***
+
+**Significance level**
+
+Moreover, the significance level (*α*) also plays a role in the power calculation. Commonly used significance levels are 0.05 (**5%**) and 0.01 (**1%**). Lowering the significance level reduces the chance of false positives (type I errors) but may require larger sample sizes to achieve the same power.
+
+**NOTE**: it's crucial to properly adjust for multiple testing to control the false positive rate, given the large number of simultaneous tests in genetic studies
+
+</details>
+
+***
+
+## Input data {.tabset}
+
+<br>
+
+### Effect size {.tabset}
+
+Plots illustrating how sample size affects the **effect size** (represented by ***[Cohen's d](https://statisticsbyjim.com/basics/cohens-d/){target="_blank"}***) and power given the ***significance level*** (*α*, type I error probability) of **`r params$sig_level`** (*Uncorrected* tab), as well as significance level corrected for multiple testing (given **`r params$features_n`** genetic features) using ***[Sidak](https://en.wikipedia.org/wiki/%C5%A0id%C3%A1k_correction){target="_blank"}*** (*α* = **`r sprintf("%.2g", sidak_correction(params$sig_level, params$features_n))`**, less conservative) and ***[Bonferroni](https://en.wikipedia.org/wiki/Bonferroni_correction){target="_blank"}*** (*α* = **`r sprintf("%.2g", params$sig_level/params$features_n)`**, more conservative) methods.
+
+#### Uncorrected α
+
+```{r effect_size, echo = FALSE, warning=FALSE, message=FALSE, out.width = "700px"}
+
+power_result <- pwr.chisq.test(N = params$samples_n, 
+                               power = params$power, 
+                               df = params$deg_freedom, 
+                               sig.level = params$sig_level)
+
+#print(power_result)
+plot(power_result, main = "")
+
+effect_size <- power_result$w
+```
+
+Given the total number of samples = **`r params$samples_n`** and power = **`r params$power`**, genetic variants with [Cohen's d](https://statisticsbyjim.com/basics/cohens-d/){target="_blank"} **effect size** at least **`r round(effect_size, digits = 2)`** (OR ≥ **`r round(exp(cohens_d_2_logOR(effect_size)), digits = 2)`**, log(OR) ≥ **`r round(cohens_d_2_logOR(effect_size), digits = 2)`**) can be detected with **`r sprintf("%.0f%%", params$sig_level * 100)`** probability of type I error.
+
+<br>
+
+***
+
+#### Corrected α (Sidak)
+
+```{r effect_size_sidak, echo = FALSE, warning=FALSE, message=FALSE, out.width = "700px"}
+
+power_result <- pwr.chisq.test(N = params$samples_n, 
+                               power = params$power, 
+                               df = params$deg_freedom, 
+                               sig.level = sidak_correction(params$sig_level, params$features_n))
+
+#print(power_result)
+plot(power_result, main = "")
+
+effect_size <- power_result$w
+```
+
+Given the total number of samples = **`r params$samples_n`** and power = **`r params$power`**, genetic variants with an **effect size** at least **`r round(effect_size, digits = 2)`** (OR ≥ **`r round(exp(cohens_d_2_logOR(effect_size)), digits = 2)`**, log(OR) ≥ **`r round(cohens_d_2_logOR(effect_size), digits = 2)`**) can be detected with **`r sprintf("%.0f%%", params$sig_level * 100)`** probability of type I error after correcting for multiple testing using ***[Sidak](https://en.wikipedia.org/wiki/%C5%A0id%C3%A1k_correction){target="_blank"}*** (less conservative) method.
+
+***
+
+#### Corrected α (Bonferroni)
+
+```{r effect_size_bonferroni, echo = FALSE, warning=FALSE, message=FALSE, out.width = "700px"}
+
+power_result <- pwr.chisq.test(N = params$samples_n, 
+                               power = params$power, 
+                               df = params$deg_freedom, 
+                               sig.level = params$sig_level/params$features_n)
+
+#print(power_result)
+plot(power_result, main = "")
+
+effect_size <- power_result$w
+```
+
+Given the total number of samples = **`r params$samples_n`** and power = **`r params$power`**, genetic variants with an **effect size** at least **`r round(effect_size, digits = 2)`** (OR ≥ **`r round(exp(cohens_d_2_logOR(effect_size)), digits = 2)`**, log(OR) ≥ **`r round(cohens_d_2_logOR(effect_size), digits = 2)`**) can be detected with **`r sprintf("%.0f%%", params$sig_level * 100)`** probability of type I error after correcting for multiple testing using ***[Bonferroni](https://en.wikipedia.org/wiki/Bonferroni_correction){target="_blank"}*** (more conservative) method.
+
+***
+
+### Power
+
+Table presenting effect size (*rows*), measured with ***[Cohen's d](https://statisticsbyjim.com/basics/cohens-d/){target="_blank"}***, odds ratio (***[OR](https://www.escal.site/){target="_blank"}***) and ***[log(OR)](https://www.escal.site/){target="_blank"}***, detectable with specific **power** given the total number of samples = **`r params$samples_n`** before (*Power* column) and after correcting significance level = **`r params$sig_level`** for **`r params$features_n`** genetic features using ***[Sidak](https://en.wikipedia.org/wiki/%C5%A0id%C3%A1k_correction){target="_blank"}*** (*Power_Sidak* column) and ***[Bonferroni](https://en.wikipedia.org/wiki/Bonferroni_correction){target="_blank"}*** (*Power_Bonferroni* column) methods.
+
+```{r power, echo = FALSE, warning=FALSE, message=FALSE}
+w <- seq(0.1,3,0.1)
+p.out <- NULL
+
+##### Cohen's d
+for (i in seq(0.1,3,0.1) ) {
+  
+  p.out <- c(p.out, pwr.chisq.test(w = i,
+                      N = params$samples_n,
+                      df = params$deg_freedom,
+                      sig.level = params$sig_level)$power)
+}
+
+##### log(OR)
+or.out <- NULL
+for (i in seq(0.1,3,0.1) ) {
+  
+  or.out <- c(or.out, round(cohens_d_2_logOR(i), digits = 2))
+}
+
+##### Sidak correction
+p_adj_s.out <- NULL
+
+for (i in seq(0.1,3,0.1) ) {
+  
+  p_adj_s.out <- c(p_adj_s.out, pwr.chisq.test(w = i,
+                      N = params$samples_n,
+                      df = params$deg_freedom,
+                      sig.level = sidak_correction(params$sig_level, params$features_n))$power)
+}
+
+##### Bonferroni correction
+p_adj_b.out <- NULL
+
+for (i in seq(0.1,3,0.1) ) {
+  
+  p_adj_b.out <- c(p_adj_b.out, pwr.chisq.test(w = i,
+                      N = params$samples_n,
+                      df = params$deg_freedom,
+                      sig.level = params$sig_level/params$features_n)$power)
+}
+
+p.out <- round(p.out, digits = 4)
+p_adj_s.out <- round(p_adj_s.out, digits = 4)
+p_adj_b.out <- round(p_adj_b.out, digits = 4)
+w <- round(w, digits = 1)
+
+df.power <- data.frame(Cohen_d = w, OR = round(exp(or.out), digits = 2), logOR = or.out, Power = sprintf("%.1f%%", p.out * 100), Power_Sidak = sprintf("%.1f%%", p_adj_s.out * 100), Power_Bonferroni = sprintf("%.1f%%", p_adj_b.out * 100))
+
+DT::datatable( data = df.power, filter="none", rownames = FALSE, extensions = c('Scroller'), options = list(pageLength = 10, dom = 't', scrollX = TRUE, deferRender = TRUE, scrollY = "400px", scroller = TRUE), width = 800, height = 400, caption = htmltools::tags$caption( style = 'caption-side: top; text-align: left; color:grey; font-size:100%'), escape = FALSE)
+```
+
+<br>
+<br>
+<br>
+<br>
+<br>
+
+***
+
+### Sample size
+
+Table presenting the **number of samples** required to detect genetic variants demonstrating specific **effect size** (*rows*), measured with **[Cohen's d](https://statisticsbyjim.com/basics/cohens-d/){target="_blank"}**, odds ratio (**[OR](https://www.escal.site/){target="_blank"}**) and **[log(OR)](https://www.escal.site/){target="_blank"}**, before (*Samples_n* column) and after correcting significance level = **`r params$sig_level`** for **`r params$features_n`** genetic features using ***[Sidak](https://en.wikipedia.org/wiki/%C5%A0id%C3%A1k_correction){target="_blank"}*** (*Samples_n_Sidak* column) and ***[Bonferroni](https://en.wikipedia.org/wiki/Bonferroni_correction){target="_blank"}*** (*Samples_n_Bonferroni* column) methods.
+
+```{r sample_size, echo = FALSE, warning=FALSE, message=FALSE}
+w <- seq(0.1,3,0.1)
+n.out <- NULL
+
+##### Cohen's d
+for (i in seq(0.1,3,0.1) ) {
+  
+  n.out <- c(n.out, pwr.chisq.test(w = i,
+                      power = params$power,
+                      df = params$deg_freedom,
+                      sig.level = params$sig_level)$N)
+}
+
+##### log(OR)
+or.out <- NULL
+for (i in seq(0.1,3,0.1) ) {
+  
+  or.out <- c(or.out, round(cohens_d_2_logOR(i), digits = 2))
+}
+
+##### Sidak correction
+n_adj_s.out <- NULL
+
+for (i in seq(0.1,3,0.1) ) {
+  
+  n_adj_s.out <- c(n_adj_s.out, pwr.chisq.test(w = i,
+                      power = params$power,
+                      df = params$deg_freedom,
+                      sig.level = sidak_correction(params$sig_level, params$features_n))$N)
+}
+
+##### Bonferroni correction
+n_adj_b.out <- NULL
+
+for (i in seq(0.1,3,0.1) ) {
+  
+  n_adj_b.out <- c(n_adj_b.out, pwr.chisq.test(w = i,
+                      power = params$power,
+                      df = params$deg_freedom,
+                      sig.level = params$sig_level/params$features_n)$N)
+}
+
+n.out <- round(n.out, digits = 0)
+n_adj_s.out <- round(n_adj_s.out, digits = 0)
+n_adj_b.out <- round(n_adj_b.out, digits = 0)
+w <- round(w, digits = 1)
+
+df.power.sample_size <- data.frame(Cohen_d = w, OR = round(exp(or.out), digits = 2), logOR = or.out, Samples_n = n.out, Samples_n_Sidak = n_adj_s.out, Samples_n_Bonferroni = n_adj_b.out)
+
+DT::datatable( data = df.power.sample_size, filter="none", rownames = FALSE, extensions = c('Scroller'), options = list(pageLength = 10, dom = 't', scrollX = TRUE, deferRender = TRUE, scrollY = "400px", scroller = TRUE), width = 800, height = 400, caption = htmltools::tags$caption( style = 'caption-side: top; text-align: left; color:grey; font-size:100%'), escape = FALSE)
+```
+
+<br>
+<br>
+<br>
+<br>
+<br>
+
+***
+
+## Simulations {.tabset}
+
+<br>
+
+### Small effect size (0.2)
+
+Plots illustrating a power for detecting **small effect size** ([Cohen's d](https://statisticsbyjim.com/basics/cohens-d/){target="_blank"} = 0.2) variants using **queried sample size** (n = `r params$samples_n`, *top panel*), as well as the **optimal sample size** (*bottom panel*) required to detect such variants with a power of **`r sprintf("%.0f%%", params$power * 100)`**.
+
+**NOTE**: the significance level (*α*) of `r sprintf("%.0f%%", params$sig_level * 100)` was not corrected for multiple testing (`r params$features_n` genetic features).
+
+<br>
+
+```{r effect_size_cohen_small, echo = FALSE, warning=FALSE, message=FALSE, out.width = "600px"}
+
+power_result <- pwr.chisq.test(w = 0.2, 
+                               N = params$samples_n, 
+                               df = params$deg_freedom, 
+                               sig.level = params$sig_level)
+
+#print(power_result)
+plot(power_result, main = "Queried sample size")
+
+power_result <- pwr.chisq.test(w = 0.2, 
+                               power = params$power, 
+                               df = params$deg_freedom, 
+                               sig.level = params$sig_level)
+
+#print(power_result)
+plot(power_result, main = "Optimal sample size")
+```
+
+***
+
+### Medium effect size (0.5)
+
+Plots illustrating a power for detecting **medium effect size** ([Cohen's d](https://statisticsbyjim.com/basics/cohens-d/){target="_blank"} = 0.5) variants using **queried sample size** (n = `r params$samples_n`, *top panel*), as well as the **optimal sample size** (*bottom panel*) required to detect such variants with a power of **`r sprintf("%.0f%%", params$power * 100)`**.
+
+**NOTE**: the significance level (*α*) of `r sprintf("%.0f%%", params$sig_level * 100)` was not corrected for multiple testing (`r params$features_n` genetic features).
+
+<br>
+
+```{r effect_size_cohen_medium, echo = FALSE, warning=FALSE, message=FALSE, out.width = "600px"}
+
+power_result <- pwr.chisq.test(w = 0.5, 
+                               N = params$samples_n, 
+                               df = params$deg_freedom, 
+                               sig.level = params$sig_level)
+
+#print(power_result)
+plot(power_result, main = "Queried sample size")
+
+power_result <- pwr.chisq.test(w = 0.5, 
+                               power = params$power, 
+                               df = params$deg_freedom, 
+                               sig.level = params$sig_level)
+
+#print(power_result)
+plot(power_result, main = "Optimal sample size")
+```
+
+***
+
+### Large effect size (0.8)
+
+Plots illustrating a power for detecting **large effect size** ([Cohen's d](https://statisticsbyjim.com/basics/cohens-d/){target="_blank"} = 0.8) variants using **queried sample size** (n = `r params$samples_n`, *top panel*), as well as the **optimal sample size** (*bottom panel*) required to detect such variants with a power of **`r sprintf("%.0f%%", params$power * 100)`**.
+
+**NOTE**: the significance level (*α*) of `r sprintf("%.0f%%", params$sig_level * 100)` was not corrected for multiple testing (`r params$features_n` genetic features).
+
+<br>
+
+```{r effect_size_cohen_large, echo = FALSE, warning=FALSE, message=FALSE, out.width = "600px"}
+
+power_result <- pwr.chisq.test(w = 0.8, 
+                               N = params$samples_n, 
+                               df = params$deg_freedom, 
+                               sig.level = params$sig_level)
+
+#print(power_result)
+plot(power_result, main = "Queried sample size")
+
+power_result <- pwr.chisq.test(w = 0.8, 
+                               power = params$power, 
+                               df = params$deg_freedom, 
+                               sig.level = params$sig_level)
+
+#print(power_result)
+plot(power_result, main = "Optimal sample size")
+```
+
+***
+
+## Addendum
+
+<details>
+<summary>Parameters</summary>
+<font size="2">
+
+```{r params_info, comment = NA}
+for ( i in 1:length(params) ) {
+  cat(paste("Parameter: ", names(params)[i], "\nValue: ", paste(unlist(params[i]), collapse = ","), "\n\n", sep=""))
+}
+```
+
+</font>
+</details>
+
+<details>
+<summary>Reporter details</summary>
+<font size="2">
+
+```{r reporter_details, comment = NA}
+cat(paste0("The report was generated by \"", Sys.info()[ "user"], "\" using \"",  Sys.info()[ "nodename"], "\" node and \"",  Sys.info()[ "sysname"], "\" operating system."))
+```
+
+</font>
+</details>
+
+<details>
+<summary>Session information</summary>
+<font size="2">
+
+```{r session_info, comment = NA}
+devtools::session_info()
+```
+
+</font>
+</details>
+
