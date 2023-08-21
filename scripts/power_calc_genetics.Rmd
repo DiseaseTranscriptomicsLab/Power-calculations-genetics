@@ -253,7 +253,7 @@ Moreover, the significance level (*α*) also plays a role in the power calculati
 
 ### Effect size {.tabset}
 
-Plots illustrating how sample size affects the **effect size** (represented by ***[Cohen's d](https://statisticsbyjim.com/basics/cohens-d/){target="_blank"}***) and power given the ***significance level*** (*α*, type I error probability) of **`r params$sig_level`** (*Uncorrected* tab), as well as significance level corrected for multiple testing (given **`r params$features_n`** genetic features) using ***[Sidak](https://en.wikipedia.org/wiki/%C5%A0id%C3%A1k_correction){target="_blank"}*** (*α* = **`r sprintf("%.2g", sidak_correction(params$sig_level, params$features_n))`**, less conservative) and ***[Bonferroni](https://en.wikipedia.org/wiki/Bonferroni_correction){target="_blank"}*** (*α* = **`r sprintf("%.2g", params$sig_level/params$features_n)`**, more conservative) methods.
+Plots illustrating how sample size affects the **effect size** (represented by ***[Cohen's d](https://statisticsbyjim.com/basics/cohens-d/){target="_blank"}***) and **power** given the ***significance level*** (*α*, type I error probability) of **`r params$sig_level`** (*Uncorrected* tab), as well as significance level corrected for multiple testing (given **`r params$features_n`** genetic features) using ***[Sidak](https://en.wikipedia.org/wiki/%C5%A0id%C3%A1k_correction){target="_blank"}*** (*α* = **`r sprintf("%.2g", sidak_correction(params$sig_level, params$features_n))`**, less conservative) and ***[Bonferroni](https://en.wikipedia.org/wiki/Bonferroni_correction){target="_blank"}*** (*α* = **`r sprintf("%.2g", params$sig_level/params$features_n)`**, more conservative) methods.
 
 #### Uncorrected α
 
