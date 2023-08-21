@@ -73,7 +73,7 @@ Rscript power_calc_genetics.R  --samples_n 35 --power 0.9 --sig_level 0.05 --deg
 
 ```
 
-The interactive HTML report named `gastric_cancer_CVID_power_calculations_features_60000.html` will be created in `results` folder.
+The interactive HTML report named `power_calc_genetics.html` will be created in `results` folder.
 
 **Note**: make sure that the created *conda* environment (see [Installation](#installation) section) is  activated
 
