@@ -18,13 +18,13 @@ Pipeline in R for performing power calculations (based on *[chi-squared](https:/
 
 ## Installation
 
-Run the [environment.yaml](envm/environment.yaml) file to create conda environment and install required packages. The -p flag should point to the miniconda installation path. For instance, to create `power_calc_genetics` environment using miniconda installed in `/miniconda` directory run the following command:
+Run the [environment.yaml](envm/environment.yaml) file to create conda environment and install required packages. The `-p` flag should point to the miniconda installation path. For instance, to create `power_calc_genetics` environment using miniconda installed in `/miniconda` directory run the following command:
 
 ```
 conda env create -p /miniconda/envs/power_calc_genetics --file envm/environment.yaml
 ```
 
-Activate created `power_calc_genetics ` conda environment before running the pipeline
+Activate created `power_calc_genetics` conda environment before running the pipeline
 
 ```
 conda activate power_calc_genetics
@@ -33,7 +33,7 @@ conda activate power_calc_genetics
 
 ## Usage
 
-To run the pipeline execure the *[power_calc_genetics.R](./scripts/power_calc_genetics.R)* script. This script catches the arguments from the command line and passes them to the *[power_calc_genetics.Rmd](./scripts/power_calc_genetics.Rmd)* script to perform power calculations and produce the interactive HTML report.
+To run the pipeline execute the *[power_calc_genetics.R](./scripts/power_calc_genetics.R)* script. This script catches the arguments from the command line and passes them to the *[power_calc_genetics.Rmd](./scripts/power_calc_genetics.Rmd)* script to perform power calculations and produce the interactive `.html` report.
 
 ### Arguments
 
@@ -55,17 +55,19 @@ Argument | Description | Required
 
 ### Examples
 
-Below is a command line use example for generating a ***genetic power calculations*** report for a hypothetical dataset of 35 samples and 60000 genetic features (variatns):
+Below is a command line use example for generating a ***genetic power calculations*** report for a hypothetical dataset of 35 samples and 60000 genetic features (variants):
 
 **Note**
 
 * make sure that the created *conda* environment (see [Installation](#installation) section) is  activated
 
 ```
-conda activate conda activate power_calc_genetics
+conda activate power_calc_genetics
 ```
 
-* *[power_calc_genetics.R](./scripts/power_calc_genetics.R)* script (see the beginning of [Usage](#usage) section) should be executed from the [scripts](./scripts) folder
+<br>
+
+*[power_calc_genetics.R](./scripts/power_calc_genetics.R)* script (see the beginning of [Usage](#usage) section) should be executed from the [scripts](./scripts) folder
 
 ```
 cd Power_calc_genetics/scripts
@@ -74,17 +76,17 @@ Rscript power_calc_genetics.R  --samples_n 35 --power 0.9 --sig_level 0.05 --deg
 
 ```
 
->The interactive HTML report named `gastric_cancer_CVID_power_calculations_features_60000.html` will be created in `results` folder.
+The interactive HTML report named `gastric_cancer_CVID_power_calculations_features_60000.html` will be created in `results` folder.
 
 <br>
 
 ### Output
 
-The pipeline generates html-based ***genetic power calculations*** and [results](#results) folder within user-defined `output` folder:
+The pipeline generates html-based ***genetic power calculations*** report within user-defined `output` folder:
 
 ```
 |
-|____results
+|____[results]
   |____[power_calc_genetics].html
   |____[power_calc_genetics].md
 ```
