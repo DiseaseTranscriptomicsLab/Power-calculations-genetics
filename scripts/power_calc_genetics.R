@@ -17,13 +17,13 @@
 #	  Command line use example: Rscript power_calc_genetics.R  --samples_n 100 --features_n 1 --power 0.9 --sig_level 0.05 --deg_freedom 1 --features_n 0.5 --report_name gastric_cancer --report_dir /mnt/scratch/home/datasets/power_calculations
 #
 #   samples_n:         Total number of samples
-#   features_n:        Total number of features (used for multihypothesis testing adjustment with Bonferroni’s method)
-#   power:             Power of test (1 minus Type II error probability)
-#   sig_level:         Significance level (Type I error probability)
+#   features_n:        Total number of features (used for multihypothesis testing adjustment)
+#   power:             Power of test (1 - type II error probability)
+#   sig_level:         Significance level (type I error probability)
 #   deg_freedom:       Degree of freedom
 #   report_name:       Desired name for the report
 #   report_dir:        Desired location for the report
-#   seed:              Set up a seed for random number generation
+#   seed:              Seed for random number generation
 #   hide_code_btn:     Hide the "Code" button allowing to show/hide code chunks in the final HTML report. Available options are: "FALSE" (default) and "TRUE"
 #
 ################################################################################
