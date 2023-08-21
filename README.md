@@ -57,9 +57,6 @@ Argument | Description | Required
 
 Below is a command line use example for generating a ***genetic power calculations*** report for a hypothetical dataset of 35 samples and 60000 genetic features (variants):
 
-**Note**
-
-* make sure that the created *conda* environment (see [Installation](#installation) section) is  activated
 
 ```
 conda activate power_calc_genetics
@@ -78,6 +75,8 @@ Rscript power_calc_genetics.R  --samples_n 35 --power 0.9 --sig_level 0.05 --deg
 
 The interactive HTML report named `gastric_cancer_CVID_power_calculations_features_60000.html` will be created in `results` folder.
 
+**Note**: make sure that the created *conda* environment (see [Installation](#installation) section) is  activated
+
 <br>
 
 ### Output
@@ -91,9 +90,7 @@ The pipeline generates html-based ***genetic power calculations*** report within
   |____[power_calc_genetics].md
 ```
 
-**Note**
-
-* The *[power_calc_genetics].md* file is a markdown (md) file containing a plain text representation of the content before it's formatted into the *.html* report.
+**Note**: the *[power_calc_genetics].md* file is a markdown (md) file containing a plain text representation of the content before it's formatted into the *.html* report.
 
 <br>
 
