@@ -69,11 +69,11 @@ conda activate power_calc_genetics
 ```
 cd Power_calc_genetics/scripts
 
-Rscript power_calc_genetics.R  --samples_n 10000 --power 0.9 --sig_level 0.05 --deg_freedom 1 --features_n 100000 --report_name power_calc_genetics --report_dir results
+Rscript power_calc_genetics.R  --samples_n 10000 --power 0.9 --sig_level 0.05 --deg_freedom 1 --features_n 100000 --report_name power_calc_genetics --report_dir output
 
 ```
 
-The interactive `HTML` report named `power_calc_genetics.html` will be created in `results` folder.
+The interactive `HTML` report named `power_calc_genetics.html` will be created in `output` folder.
 
 **Note**: make sure that the created *conda* environment (see [Installation](#installation) section) is  activated
 
@@ -85,7 +85,7 @@ The pipeline generates `HTML`-based ***genetic power calculations*** report with
 
 ```
 |
-|____[results]
+|____[output]
   |____[power_calc_genetics].html
   |____[power_calc_genetics].md
 ```
