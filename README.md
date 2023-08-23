@@ -18,7 +18,7 @@ Pipeline in R for performing power calculations (based on *[chi-squared](https:/
 
 ## Installation
 
-Run the [environment.yaml](envm/environment.yaml) file to create conda environment and install required packages. The `-p` flag should point to the miniconda installation path. For instance, to create `power_calc_genetics` environment using miniconda installed in `/miniconda` directory run the following command:
+Use the [environment.yaml](envm/environment.yaml) file to create conda environment and install required packages. The `-p` flag should point to the miniconda installation path. For instance, to create `power_calc_genetics` environment using miniconda installed in `/miniconda` directory run the following command:
 
 ```
 conda env create -p /miniconda/envs/power_calc_genetics --file envm/environment.yaml
@@ -55,7 +55,7 @@ Argument | Description | Required
 
 ### Examples
 
-Below is a command line use example for generating a ***genetic power calculations*** report for a hypothetical dataset of 35 samples and 60000 genetic features (variants):
+Below is a command line use example for generating a ***genetic power calculations*** report for a hypothetical dataset of 10000 samples and 100000 genetic features (variants):
 
 
 ```
@@ -69,7 +69,7 @@ conda activate power_calc_genetics
 ```
 cd Power_calc_genetics/scripts
 
-Rscript power_calc_genetics.R  --samples_n 35 --power 0.9 --sig_level 0.05 --deg_freedom 1 --features_n 60000 --report_name power_calc_genetics --report_dir results
+Rscript power_calc_genetics.R  --samples_n 10000 --power 0.9 --sig_level 0.05 --deg_freedom 1 --features_n 100000 --report_name power_calc_genetics --report_dir results
 
 ```
 
