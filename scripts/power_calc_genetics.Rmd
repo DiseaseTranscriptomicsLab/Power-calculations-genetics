@@ -380,7 +380,7 @@ DT::datatable( data = df.power, filter="none", rownames = FALSE, extensions = c(
 
 ### Sample size
 
-Table presenting the **number of samples** required to detect genetic variants demonstrating specific **effect size** (*rows*), measured with **[Cohen's d](https://statisticsbyjim.com/basics/cohens-d/){target="_blank"}**, odds ratio (**[OR](https://www.escal.site/){target="_blank"}**) and **[log(OR)](https://www.escal.site/){target="_blank"}**, before (*Samples_n* column) and after correcting significance level = **`r params$sig_level`** for **`r params$features_n`** genetic features using ***[Sidak](https://en.wikipedia.org/wiki/%C5%A0id%C3%A1k_correction){target="_blank"}*** (*Samples_n_Sidak* column) and ***[Bonferroni](https://en.wikipedia.org/wiki/Bonferroni_correction){target="_blank"}*** (*Samples_n_Bonferroni* column) methods.
+Table presenting the **number of samples** required to detect genetic variants with power = **`r params$power`** and  demonstrating specific **effect size** (*rows*), measured with **[Cohen's d](https://statisticsbyjim.com/basics/cohens-d/){target="_blank"}**, odds ratio (**[OR](https://www.escal.site/){target="_blank"}**) and **[log(OR)](https://www.escal.site/){target="_blank"}**, before (*Samples_n* column) and after correcting significance level = **`r params$sig_level`** for **`r params$features_n`** genetic features using ***[Sidak](https://en.wikipedia.org/wiki/%C5%A0id%C3%A1k_correction){target="_blank"}*** (*Samples_n_Sidak* column) and ***[Bonferroni](https://en.wikipedia.org/wiki/Bonferroni_correction){target="_blank"}*** (*Samples_n_Bonferroni* column) methods.
 
 ```{r sample_size, echo = FALSE, warning=FALSE, message=FALSE}
 w <- seq(0.1,3,0.1)
