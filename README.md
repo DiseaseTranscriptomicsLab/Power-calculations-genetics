@@ -6,6 +6,7 @@ Pipeline in R for performing power calculations (based on *[chi-squared](https:/
 ## Table of contents <!-- omit in toc -->
 
 <!-- vim-markdown-toc GFM -->
+- [Introduction](#introduction)
 - [Installation](#installation)
 - [Usage](#usage)
   - [Arguments](#arguments)
@@ -13,6 +14,12 @@ Pipeline in R for performing power calculations (based on *[chi-squared](https:/
 - [Output](#output)
 
 <!-- vim-markdown-toc -->
+
+<br>
+
+## Introduction
+
+The rational behind performing power calculations is that a study with low statistical power has a reduced chance of detecting a true effect, but it is less well appreciated that low power also reduces the likelihood that a statistically significant result reflects a true effect (see "[Power failure: why small sample size undermines the reliability of neuroscience](docs/Power%20failure%20why%20small%20sample%20size%20undermines%20the%20reliability%20of%20neuroscience.pdf)" published in [Nature Reviews Neuroscience](https://www.nature.com/articles/nrn3475) (2013)). The consequences of this include overestimates of effect size and low reproducibility of results. 
 
 <br>
 
@@ -29,6 +36,7 @@ Activate created `power_calc_genetics` conda environment before running the pipe
 ```
 conda activate power_calc_genetics
 ```
+
 <br>
 
 ## Usage
